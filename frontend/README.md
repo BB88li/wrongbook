@@ -1,5 +1,8 @@
-# Vue 3 + Vite
+# frontend — Vue 3 前端
 
-This template should help get you started developing with Vue 3 in Vite. The template uses Vue 3 `<script setup>` SFCs, check out the [script setup docs](https://v3.vuejs.org/api/sfc-script-setup.html#sfc-script-setup) to learn more.
+考研智能错题本的前端。完整说明见项目根目录 README.md。
 
-Learn more about IDE Support for Vue in the [Vue Docs Scaling up Guide](https://vuejs.org/guide/scaling-up/tooling.html#ide-support).
+- 启动：`npm run dev`（端口 5173，/api 代理到后端 8000）
+- 页面：错题列表 / 录入错题 / 今日复习 / 学习报告
+- 技术：Vue 3 + Vite + Element Plus + vue-router + axios（ECharts 已装，报告页待用）
+
