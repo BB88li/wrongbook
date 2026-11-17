@@ -46,6 +46,15 @@ Write-Host ''
 
 Push-Location $backend
 try {
+    # 启动前先备份一次数据库，避免长期使用中意外丢数据（失败不影响启动）
+    & $python scripts\backup_db.py
+} catch {
+    Write-Host 'WARN: backup failed, continue.' -ForegroundColor Yellow
+}
+Pop-Location
+
+Push-Location $backend
+try {
     & $python -m uvicorn app.main:app --host 0.0.0.0 --port $Port
 }
 finally {
