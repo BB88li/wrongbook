@@ -50,10 +50,16 @@ if DIST_DIR.is_dir():
 
     @app.get("/{full_path:path}", include_in_schema=False)
     def spa_fallback(full_path: str):
-        """静态资源命中就返回文件，否则回退到 index.html（支持前端路由刷新）。"""
+        """静态资源命中就返回文件，否则回退到 index.html（支持前端路由刷新）。
+
+        注意：full_path 来自 URL，可能是 `..%2F..%2FREADME.md` 这样的路径穿越。
+        必须 resolve 后确认仍落在 dist 目录内，否则会变成"局域网内任意文件下载"。
+        """
         if full_path.startswith(("api/", "docs", "redoc", "openapi.json")):
             raise HTTPException(status_code=404, detail="Not Found")
-        candidate = DIST_DIR / full_path
-        if full_path and candidate.is_file():
+
+        dist_root = DIST_DIR.resolve()
+        candidate = (dist_root / full_path).resolve()
+        if full_path and candidate.is_file() and candidate.is_relative_to(dist_root):
             return FileResponse(candidate)
-        return FileResponse(DIST_DIR / "index.html")
+        return FileResponse(dist_root / "index.html")

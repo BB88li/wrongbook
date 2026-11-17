@@ -78,11 +78,13 @@ c = create("线代", "concept", "概念题 C")
 d = create("线代", "method", "方法题 D")
 check("POST /mistakes x4", len(created) == 4)
 status, body = call("GET", "/mistakes")
-check("GET /mistakes 返回 4 条", status == 200 and len(body) == 4, f"len={len(body)}")
+listed = {item["id"] for item in body}
+check("GET /mistakes 能查到 4 条新数据", status == 200 and set(created) <= listed, f"listed={len(listed)}")
 
 print("\n=== 4. 新建错题当天不进队列（明天才到期）===")
 status, body = call("GET", "/reviews/due")
-check("GET /reviews/due 为空", status == 200 and body == [], f"len={len(body)}")
+queued = {card["mistake_id"] for card in body}
+check("今日队列不含新错题", status == 200 and not (set(created) & queued), f"queue={len(queued)}")
 
 print("\n=== 5. 复习提交：失败不清零 ===")
 status, body = call("POST", "/reviews", {"mistake_id": a, "quality": 1})
@@ -95,16 +97,18 @@ for mid in (b, c, d):
     status, _ = call("POST", "/reviews", {"mistake_id": mid, "quality": 5, "reviewed_at": YESTERDAY})
     assert status == 200
 status, queue = call("GET", "/reviews/due")
-check("队列有 3 张卡片", status == 200 and len(queue) == 3, f"len={len(queue)}")
-check("卡片带题干与答案", queue and queue[0]["question_text"] and queue[0]["correct_answer"] is not None)
-check("卡片带掌握度", queue and 0 <= queue[0]["mastery"] <= 1, str(queue[0].get("mastery")))
+mine = [card for card in queue if card["mistake_id"] in {b, c, d}]
+check("3 张新卡片进入队列", status == 200 and len(mine) == 3, f"len={len(mine)}")
+check("卡片带题干与答案", bool(mine) and mine[0]["question_text"] and mine[0]["correct_answer"] is not None)
+check("卡片带掌握度", bool(mine) and 0 <= mine[0]["mastery"] <= 1, str(mine[0].get("mastery") if mine else None))
 
 print("\n=== 7. 考前模式：按优先级排序并截断 ===")
-status, _ = call("PUT", "/settings", {"exam_date": (TODAY + timedelta(days=5)).isoformat()})
+call("PUT", "/settings", {"exam_date": (TODAY + timedelta(days=5)).isoformat(), "daily_review_limit": 10})
 status, queue = call("GET", "/reviews/due")
-order = [card["error_type"] for card in queue]
+mine = [card for card in queue if card["mistake_id"] in {b, c, d}]
+order = [card["error_type"] for card in mine]
 check("剩余 5 天进入考前模式，概念题排第一", order[:1] == ["concept"], str(order))
-status, _ = call("PUT", "/settings", {"daily_review_limit": 2})
+call("PUT", "/settings", {"daily_review_limit": 2})
 status, queue = call("GET", "/reviews/due")
 check("每日上限 2 生效", len(queue) == 2, f"len={len(queue)}")
 
@@ -125,7 +129,8 @@ for mid in (b, c, d):
     call("DELETE", f"/mistakes/{mid}")
 call("PUT", "/settings", {"exam_date": None, "daily_review_limit": 20})
 status, body = call("GET", "/mistakes")
-check("清理完毕，列表为空", status == 200 and body == [], f"len={len(body)}")
+leftover = set(created) & {item["id"] for item in body}
+check("本次创建的数据已全部清理", status == 200 and leftover == set(), f"leftover={leftover}")
 
 print()
 if failures:
