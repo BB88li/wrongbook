@@ -38,12 +38,13 @@ body { margin: 0; font-family: 'Microsoft YaHei', sans-serif; background: #f5f7f
 /* 手机端：侧边栏变顶部导航，表单不再挤成一列 */
 @media (max-width: 768px) {
   .layout { flex-direction: column; }
-  .aside { width: 100% !important; border-right: none; border-bottom: 1px solid #e4e7ed; }
+  .el-container { min-width: 0; }
+  .aside { width: 100% !important; min-width: 0; border-right: none; border-bottom: 1px solid #e4e7ed; }
   .logo { padding: 12px 16px; font-size: 16px; }
-  .menu { display: flex; overflow-x: auto; }
+  .menu { display: flex; overflow-x: auto; min-width: 0; }
   .menu .el-menu-item { flex: 0 0 auto; padding: 0 14px; height: 44px; line-height: 44px; }
   .header { display: none; }
-  .main { padding: 12px; }
+  .main { padding: 12px; min-width: 0; }
   .el-form-item__label { width: auto !important; }
   .el-form-item { flex-wrap: wrap; }
 }

@@ -22,6 +22,9 @@ onMounted(load)
 
 const errorTypeText = { careless: '粗心', concept: '概念不清', method: '方法不会' }
 
+// 后端返回 ISO 时间串（2026-11-17T10:44:48），表格里只显示到分钟
+const formatTime = (value) => (value ? value.replace('T', ' ').slice(0, 16) : '')
+
 const remove = async (id) => {
   await ElMessageBox.confirm('确定删除这条错题？', '提示', { type: 'warning' })
   await mistakeApi.remove(id)
@@ -51,7 +54,9 @@ const remove = async (id) => {
       <el-table-column label="错误原因" width="110">
         <template #default="{ row }">{{ errorTypeText[row.error_type] || row.error_type }}</template>
       </el-table-column>
-      <el-table-column prop="created_at" label="录入时间" width="160" />
+      <el-table-column label="录入时间" width="150">
+        <template #default="{ row }">{{ formatTime(row.created_at) }}</template>
+      </el-table-column>
       <el-table-column label="操作" width="80">
         <template #default="{ row }">
           <el-button type="danger" link @click="remove(row.id)">删除</el-button>
