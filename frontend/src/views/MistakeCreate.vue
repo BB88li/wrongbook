@@ -1,9 +1,12 @@
 <script setup>
 // 录入错题：题干 + 我的作答 + 正确答案/解析。支持按科目过滤知识点。
-import { computed, onMounted, reactive, ref } from 'vue'
+// 为连续录入做了三处优化：自动聚焦题干、Ctrl+Enter 保存、记住上次的科目/错因/知识点。
+import { computed, nextTick, onMounted, reactive, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import { knowledgeApi, mistakeApi } from '../api'
+
+const STORAGE_KEY = 'wrongbook:last-mistake-form'
 
 const router = useRouter()
 const form = reactive({
@@ -18,15 +21,43 @@ const form = reactive({
 })
 const knowledge = ref([])
 const submitting = ref(false)
+const questionRef = ref(null)
 
 const chapters = computed(() =>
   knowledge.value.filter((k) => k.parent_id === null && k.subject === form.subject),
 )
 
+const remember = () => {
+  try {
+    localStorage.setItem(
+      STORAGE_KEY,
+      JSON.stringify({
+        subject: form.subject,
+        error_type: form.error_type,
+        knowledge_point_id: form.knowledge_point_id,
+      }),
+    )
+  } catch {
+    // 隐私模式下 localStorage 可能不可用，忽略
+  }
+}
+
 onMounted(async () => {
   const { data } = await knowledgeApi.list()
   // 章节结构：parent_id 为 null 的是章；节后续再启用
   knowledge.value = data
+
+  try {
+    const saved = JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}')
+    if (saved.subject) form.subject = saved.subject
+    if (saved.error_type) form.error_type = saved.error_type
+    if (saved.knowledge_point_id) form.knowledge_point_id = saved.knowledge_point_id
+  } catch {
+    // 本地缓存损坏时用默认值
+  }
+
+  await nextTick()
+  questionRef.value?.focus()
 })
 
 const submit = async () => {
@@ -43,6 +74,7 @@ const submit = async () => {
       analysis: form.analysis || null,
       source: form.source || null,
     })
+    remember()
     ElMessage.success('录入成功，明天开始进入复习队列')
     router.push('/mistakes')
   } finally {
@@ -53,7 +85,7 @@ const submit = async () => {
 
 <template>
   <el-card>
-    <el-form label-width="90px" style="max-width: 760px">
+    <el-form label-width="90px" style="max-width: 760px" @keydown.ctrl.enter.prevent="submit" @submit.prevent>
       <el-form-item label="科目">
         <el-radio-group v-model="form.subject" @change="form.knowledge_point_id = null">
           <el-radio-button value="高数">高数</el-radio-button>
@@ -63,6 +95,7 @@ const submit = async () => {
 
       <el-form-item label="题目内容">
         <el-input
+          ref="questionRef"
           v-model="form.question_text"
           type="textarea"
           :rows="5"
@@ -113,7 +146,16 @@ const submit = async () => {
       <el-form-item>
         <el-button type="primary" :loading="submitting" @click="submit">保存错题</el-button>
         <el-button @click="$router.back()">取消</el-button>
+        <span class="kbd-hint">Ctrl + Enter 保存 · 科目/错因/知识点会记住上次的选择</span>
       </el-form-item>
     </el-form>
   </el-card>
 </template>
+
+<style scoped>
+.kbd-hint { color: #909399; font-size: 12px; margin-left: 12px; }
+
+@media (max-width: 768px) {
+  .kbd-hint { display: none; }
+}
+</style>
