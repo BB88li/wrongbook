@@ -1,6 +1,6 @@
 <script setup>
-// 录入错题：骨架版（AI 识别/讲解后置），手动填文本
-import { onMounted, reactive, ref } from 'vue'
+// 录入错题：题干 + 我的作答 + 正确答案/解析。支持按科目过滤知识点。
+import { computed, onMounted, reactive, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import { knowledgeApi, mistakeApi } from '../api'
@@ -12,14 +12,21 @@ const form = reactive({
   knowledge_point_id: null,
   error_type: 'careless',
   my_answer: '',
+  correct_answer: '',
+  analysis: '',
+  source: '',
 })
 const knowledge = ref([])
 const submitting = ref(false)
 
+const chapters = computed(() =>
+  knowledge.value.filter((k) => k.parent_id === null && k.subject === form.subject),
+)
+
 onMounted(async () => {
   const { data } = await knowledgeApi.list()
-  // 骨架先按科目过滤章；节结构后置
-  knowledge.value = data.filter((k) => k.parent_id === null)
+  // 章节结构：parent_id 为 null 的是章；节后续再启用
+  knowledge.value = data
 })
 
 const submit = async () => {
@@ -29,8 +36,14 @@ const submit = async () => {
   }
   submitting.value = true
   try {
-    await mistakeApi.create({ ...form, my_answer: form.my_answer || null })
-    ElMessage.success('录入成功')
+    await mistakeApi.create({
+      ...form,
+      my_answer: form.my_answer || null,
+      correct_answer: form.correct_answer || null,
+      analysis: form.analysis || null,
+      source: form.source || null,
+    })
+    ElMessage.success('录入成功，明天开始进入复习队列')
     router.push('/mistakes')
   } finally {
     submitting.value = false
@@ -40,9 +53,9 @@ const submit = async () => {
 
 <template>
   <el-card>
-    <el-form label-width="90px" style="max-width: 720px">
+    <el-form label-width="90px" style="max-width: 760px">
       <el-form-item label="科目">
-        <el-radio-group v-model="form.subject">
+        <el-radio-group v-model="form.subject" @change="form.knowledge_point_id = null">
           <el-radio-button value="高数">高数</el-radio-button>
           <el-radio-button value="线代">线代</el-radio-button>
         </el-radio-group>
@@ -57,6 +70,28 @@ const submit = async () => {
         />
       </el-form-item>
 
+      <el-form-item label="正确答案">
+        <el-input
+          v-model="form.correct_answer"
+          type="textarea"
+          :rows="2"
+          placeholder="标准答案。复习时先自评再对答案，没有它就无法验证对错"
+        />
+      </el-form-item>
+
+      <el-form-item label="解析">
+        <el-input
+          v-model="form.analysis"
+          type="textarea"
+          :rows="4"
+          placeholder="思路 / 考点 / 当时为什么错（可留空，后续 AI 生成后补）"
+        />
+      </el-form-item>
+
+      <el-form-item label="我的解答">
+        <el-input v-model="form.my_answer" type="textarea" :rows="2" placeholder="选填：你当时是怎么写的" />
+      </el-form-item>
+
       <el-form-item label="错误原因">
         <el-select v-model="form.error_type" style="width: 200px">
           <el-option label="粗心" value="careless" />
@@ -67,12 +102,12 @@ const submit = async () => {
 
       <el-form-item label="知识点">
         <el-select v-model="form.knowledge_point_id" placeholder="选择章节" clearable filterable style="width: 320px">
-          <el-option v-for="k in knowledge" :key="k.id" :label="`${k.subject} · ${k.name}`" :value="k.id" />
+          <el-option v-for="k in chapters" :key="k.id" :label="k.name" :value="k.id" />
         </el-select>
       </el-form-item>
 
-      <el-form-item label="我的解答">
-        <el-input v-model="form.my_answer" type="textarea" :rows="3" placeholder="选填：你当时是怎么错的" />
+      <el-form-item label="来源">
+        <el-input v-model="form.source" maxlength="100" placeholder="选填：2023 数一真题 / 660 题 / 模拟卷" style="width: 320px" />
       </el-form-item>
 
       <el-form-item>

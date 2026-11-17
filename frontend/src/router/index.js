@@ -6,6 +6,7 @@ const routes = [
   { path: '/mistakes/new', name: 'mistake-new', component: () => import('../views/MistakeCreate.vue'), meta: { title: '录入错题' } },
   { path: '/review', name: 'review', component: () => import('../views/Review.vue'), meta: { title: '今日复习' } },
   { path: '/report', name: 'report', component: () => import('../views/Report.vue'), meta: { title: '学习报告' } },
+  { path: '/settings', name: 'settings', component: () => import('../views/Settings.vue'), meta: { title: '设置' } },
 ]
 
 const router = createRouter({

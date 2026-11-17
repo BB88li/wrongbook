@@ -17,7 +17,7 @@ class Settings(BaseSettings):
     model_config = SettingsConfigDict(env_file=".env", env_file_encoding="utf-8", extra="ignore")
 
     app_name: str = "考研智能错题本系统"
-    app_version: str = "0.1.0"
+    app_version: str = "0.2.0"
 
     # SQLite: sqlite:///绝对路径    MySQL: mysql+pymysql://user:pass@host:port/db?charset=utf8mb4
     database_url: str = DEFAULT_DATABASE_URL
@@ -25,6 +25,13 @@ class Settings(BaseSettings):
     # 与指导老师确认前先用占位；AI 密钥放 .env，不进 git
     ai_multimodal_api_key: str = ""
     ai_text_api_key: str = ""
+
+    # 允许跨域的来源，逗号分隔；* 表示全部放开（仅开发/演示）
+    cors_origins: str = "*"
+
+    @property
+    def cors_origin_list(self) -> list[str]:
+        return [origin.strip() for origin in self.cors_origins.split(",") if origin.strip()]
 
 
 settings = Settings()
