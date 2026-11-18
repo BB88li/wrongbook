@@ -27,8 +27,15 @@ onMounted(load)
 const errorTypeText = { careless: '粗心', concept: '概念不清', method: '方法不会' }
 const errorTagType = { careless: 'info', concept: 'danger', method: 'warning' }
 
-// 后端返回 ISO 时间串（2026-11-17T10:44:48），表格里只显示到分钟
-const formatTime = (value) => (value ? value.replace('T', ' ').slice(0, 16) : '')
+// 后端按 UTC 存储（SQLite 的 CURRENT_TIMESTAMP 就是 UTC），
+// 这里补上 Z 再交给浏览器转成本地时区，否则会比实际时间少 8 小时。
+const formatTime = (value) => {
+  if (!value) return ''
+  const date = new Date(value.endsWith('Z') ? value : `${value}Z`)
+  if (Number.isNaN(date.getTime())) return value.replace('T', ' ').slice(0, 16)
+  const pad = (n) => String(n).padStart(2, '0')
+  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())} ${pad(date.getHours())}:${pad(date.getMinutes())}`
+}
 
 const remove = async (id) => {
   await ElMessageBox.confirm('确定删除这条错题？', '提示', { type: 'warning' })
