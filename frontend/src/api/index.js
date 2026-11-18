@@ -22,7 +22,8 @@ api.interceptors.response.use(
 )
 
 export const mistakeApi = {
-  list: (subject) => api.get('/mistakes', { params: { subject } }),
+  list: (subject, errorType) =>
+    api.get('/mistakes', { params: { subject, error_type: errorType } }),
   get: (id) => api.get(`/mistakes/${id}`),
   create: (data) => api.post('/mistakes', data),
   update: (id, data) => api.put(`/mistakes/${id}`, data),

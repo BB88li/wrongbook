@@ -81,6 +81,17 @@ status, body = call("GET", "/mistakes")
 listed = {item["id"] for item in body}
 check("GET /mistakes 能查到 4 条新数据", status == 200 and set(created) <= listed, f"listed={len(listed)}")
 
+print("\n=== 3.5 按错因筛选 ===")
+status, body = call("GET", "/mistakes?error_type=concept")
+concept_ids = {item["id"] for item in body}
+check(
+    "只返回概念不清的题",
+    status == 200 and {a, c} <= concept_ids and not ({b, d} & concept_ids),
+    f"ids={sorted(concept_ids)}",
+)
+status, _ = call("GET", "/mistakes?error_type=unknown")
+check("非法错因 -> 422", status == 422, f"status={status}")
+
 print("\n=== 4. 新建错题当天不进队列（明天才到期）===")
 status, body = call("GET", "/reviews/due")
 queued = {card["mistake_id"] for card in body}

@@ -130,7 +130,7 @@ cd frontend && npm run dev                               # 5173，/api 代理到
 cd backend
 uv run python -m unittest discover -s tests -v          # 15 条算法单测
 uv run uvicorn app.main:app --port 8123                 # 终端 1
-uv run python scripts/smoke_test.py                     # 终端 2，17 项端到端
+uv run python scripts/smoke_test.py                     # 终端 2，19 项端到端
 ```
 
 ### 备份
@@ -172,7 +172,7 @@ wrongbook/
 | 方法 | 路径 | 说明 |
 |---|---|---|
 | POST | `/api/v1/mistakes` | 录入错题（同时建调度状态） |
-| GET | `/api/v1/mistakes` | 列表（subject / limit / offset） |
+| GET | `/api/v1/mistakes` | 列表（subject / error_type / limit / offset） |
 | GET | `/api/v1/mistakes/{id}` | 详情 |
 | PUT | `/api/v1/mistakes/{id}` | 更新（必填字段不可置空） |
 | DELETE | `/api/v1/mistakes/{id}` | 删除（级联） |
@@ -192,4 +192,5 @@ wrongbook/
 ## 文档
 
 - [项目进展说明](docs/项目进展.md)：课题定位、已完成工作、后续计划、待讨论问题
-- [智能复习调度：定义、算法与验证](docs/调度算法设计.md)：调度问题的形式化、记忆参数学习、期望收益决策、实验设计
+- [智能复习调度：定义、算法与验证](docs/调度算法设计.md)：调度问题的形式化、记忆强度校准、状态判定与排序策略、实验设计
+- [页面与交互设计](docs/页面设计.md)：错因与掌握状态如何体现在列表与复习页

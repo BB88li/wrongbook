@@ -5,7 +5,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
-from app.core.constants import ERROR_TYPE_LABELS, SUBJECTS
+from app.core.constants import ERROR_TYPE_LABELS, ERROR_TYPES, SUBJECTS
 from app.db.base import get_db
 from app.models.knowledge import KnowledgePoint
 from app.models.mistake import Mistake
@@ -92,11 +92,12 @@ def create_mistake(payload: MistakeCreate, db: Session = Depends(get_db)):
 @router.get("/mistakes", response_model=list[MistakeOut])
 def list_mistakes(
     subject: str | None = Query(None, description="按科目过滤"),
+    error_type: str | None = Query(None, description="按错因过滤：careless / concept / method"),
     limit: int = Query(200, ge=1, le=500),
     offset: int = Query(0, ge=0),
     db: Session = Depends(get_db),
 ):
-    """错题列表，按录入时间倒序，支持科目过滤与分页。"""
+    """错题列表，按录入时间倒序，支持科目、错因过滤与分页。"""
     user = _get_default_user(db)
     stmt = (
         select(Mistake)
@@ -109,6 +110,10 @@ def list_mistakes(
         if subject not in SUBJECTS:
             raise HTTPException(status_code=422, detail=f"科目必须是 {SUBJECTS} 之一")
         stmt = stmt.where(Mistake.subject == subject)
+    if error_type:
+        if error_type not in ERROR_TYPES:
+            raise HTTPException(status_code=422, detail=f"错因必须是 {ERROR_TYPES} 之一")
+        stmt = stmt.where(Mistake.error_type == error_type)
     return db.scalars(stmt).all()
 
 
