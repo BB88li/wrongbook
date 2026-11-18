@@ -115,6 +115,8 @@ cd .. && ./启动.bat                            # Windows 双击也可
 
 浏览器打开 `http://127.0.0.1:8000`。启动脚本会打印局域网地址，手机连同一 WiFi 即可访问。
 
+如果服务已经在运行（比如上次的黑窗口没关），脚本会直接提示地址并退出，不会重复启动；要重启就先关掉旧窗口。端口被别的程序占用时，脚本会打印占用进程的 PID，也可以换端口：`start.ps1 -Port 8001`。
+
 ### 方式二：前后端分离（开发模式）
 
 ```bash
@@ -130,7 +132,7 @@ cd frontend && npm run dev                               # 5173，/api 代理到
 cd backend
 uv run python -m unittest discover -s tests -v          # 15 条算法单测
 uv run uvicorn app.main:app --port 8123                 # 终端 1
-uv run python scripts/smoke_test.py                     # 终端 2，19 项端到端
+uv run python scripts/smoke_test.py                     # 终端 2，17 项端到端
 ```
 
 ### 备份
